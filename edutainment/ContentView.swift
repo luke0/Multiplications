@@ -26,18 +26,34 @@ struct ContentView: View {
     @State private var answer:String = ""
     @State private var score:Int = 0
 
+    private var threeColumnGrid = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    
     var body: some View {
-        Form{
+        Group{
             VStack{
-                Text("Your score is:\(score)")
-                Text("Questions left:\(questions.count)")
                 HStack{
-                    Stepper("Multiplication tables", value:$maxValue, in: 2...12)
-                        .labelsHidden()
-                    Text("\(maxValue) X Times tables")
+                    Text("Your score is: \(score)")
+                    Text("Questions left: \(questions.count)")
                 }
-                Spacer()
-                Text("Number of questions (\(self.numOfQuestions))")
+                .padding()
+
+                HStack{
+                    LazyVGrid(columns: threeColumnGrid){
+                        ForEach(1...12, id: \.self) { index in
+                            Button(action: {
+                                maxValue = index
+                                generateQuestions()
+                            }) {
+                                Image(systemName: index == maxValue ? "\(index).circle.fill" : "\(index).circle")
+                                .font(.title)
+                                .foregroundColor(.primary)
+                            }
+                        }
+                    }
+                }
+                .padding()
+
+                Text("How many questions would you like?")
                 Picker(selection: $numOfQuestions, label: Text("Number of questions (\(self.numOfQuestions)")){
                     Text("5").tag(5)
                     Text("10").tag(10)
@@ -48,17 +64,17 @@ struct ContentView: View {
                 .onChange(of: numOfQuestions, perform: { (value) in
                     generateQuestions()
                 })
-                Spacer()
                 if let value = questionToShow {
-                    Text("\(value.question)")
-                    TextField("Answer", text:$answer)
-                        .onSubmit {
-                            if (Int(answer) == value.answer){
-                                score += 1
-                            }
-                            questions.removeLast()
-                            self.questionToShow = questions.last
+                    Form {
+                        Text("\(value.question)")
+                        TextField("Answer", text:$answer)
+                        .keyboardType(.numberPad)
+                        Button(action: {
+                            checkAnswer()
+                        }) {
+                            Text("Submit")
                         }
+                    }
                 }
             }
         }
@@ -76,14 +92,25 @@ struct ContentView: View {
         
         for _ in 1...maxQuestions {
             
-            let input:Int = Int.random(in: 2...maxValue)
-            let input2 :Int = Int.random(in: 2...12)
+            let input:Int = Int.random(in: 1...maxValue)
+            let input2 :Int = Int.random(in: 1...12)
             
             self.questions.append(Question(question: "\(input) X \(input2)", answer: input * input2))
         }
         
         print(questions.count)
         self.questionToShow = questions.last
+    }
+    
+    func checkAnswer(){
+        if let value = questionToShow {
+            if (Int(answer) == value.answer){
+                score += 1
+            }
+        }
+        questions.removeLast()
+        self.questionToShow = questions.last
+        self.answer = ""
     }
 }
 
